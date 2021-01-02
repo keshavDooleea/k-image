@@ -12,7 +12,7 @@ chrome.browserAction.onClicked.addListener((tab) => {
 
 // initial storage
 chrome.runtime.onInstalled.addListener(() => {
-  chrome.storage.sync.set({ hide: true }, () =>
-    console.log("hide image is true")
+  chrome.storage.sync.set({ counter: 0 }, () =>
+    console.log("counter is initially 0")
   );
 });

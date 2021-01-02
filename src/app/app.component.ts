@@ -1,4 +1,4 @@
-import { Component, ViewChild } from '@angular/core';
+import { Component } from '@angular/core';
 
 @Component({
   selector: 'app-root',
@@ -6,36 +6,40 @@ import { Component, ViewChild } from '@angular/core';
   styleUrls: ['./app.component.scss'],
 })
 export class AppComponent {
-  isChecked: boolean;
-  @ViewChild('inputElement') inputElement: HTMLInputElement;
+  counter = 0;
 
   constructor() {
-    chrome.storage.sync.get('hide', (data) => {
-      console.log('INNNNN ', data.hide);
-      this.inputElement.checked = data.hide;
-      this.isChecked = data.hide;
+    chrome.storage.sync.get('counter', (data) => {
+      this.counter = data.counter;
+
+      chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+        chrome.tabs.sendMessage(
+          tabs[0].id,
+          { command: 'onPopUpInit', counter: this.counter },
+          (response) => {
+            console.log(response.result);
+          }
+        );
+      });
     });
   }
 
   inputChange(): void {
-    this.isChecked = !this.isChecked;
-
-    // update the extension storage value
-    chrome.storage.sync.set({ hide: this.isChecked }, () => {
-      console.log('The value is' + this.isChecked);
-    });
-
-    const command = this.isChecked ? 'init' : 'remove';
-
-    chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
-      chrome.tabs.sendMessage(
-        tabs[0].id,
-        { command, hide: this.isChecked },
-        (response) => {
-          console.log(response.result);
-        }
-      );
-    });
+    // this.isChecked = !this.isChecked;
+    // // update the extension storage value
+    // chrome.storage.sync.set({ hide: this.isChecked }, () => {
+    //   console.log('The value is' + this.isChecked);
+    // });
+    // const command = this.counter > 0 ? 'init' : 'remove';
+    // chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+    //   chrome.tabs.sendMessage(
+    //     tabs[0].id,
+    //     { command, hide: this.isChecked },
+    //     (response) => {
+    //       console.log(response.result);
+    //     }
+    //   );
+    // });
   }
 
   btnClicked(): void {
