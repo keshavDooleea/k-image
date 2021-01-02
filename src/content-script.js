@@ -4,6 +4,7 @@
  */
 
 console.log("Content script working");
+const imageContainers = [];
 
 //on init perform based on chrome stroage value
 window.onload = function () {
@@ -19,8 +20,8 @@ window.onload = function () {
 //   }
 // });
 
-//message listener for background
-chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
+// message listener for background.js
+chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   if (request === "onExtensionClicked") {
   }
 
@@ -33,6 +34,7 @@ chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
 
 const addListeners = () => {
   console.log("addListeners");
+
   addStylesToBody();
   let currentCounter;
   const allImages = document.querySelectorAll("body img");
@@ -40,7 +42,7 @@ const addListeners = () => {
 
   chrome.storage.sync.get("counter", (data) => (currentCounter = data.counter));
 
-  // remove all click listeners on other dom elements
+  // prevent click listeners on all dom elements except images
   body.addEventListener("click", (event) => {
     if (event.target.tagName.toLowerCase() !== "img") return;
   });
@@ -48,17 +50,27 @@ const addListeners = () => {
   // add specific listener on each image
   allImages.forEach((img) => {
     img.addEventListener("click", (event) => {
-      img.classList.add("hide");
-
       chrome.storage.sync.set({ counter: currentCounter++ }, () => {
-        console.log("The counter is " + currentCounter);
+        styleImage(img, event, currentCounter);
       });
     });
   });
 };
 
-const removeListeners = () => {
-  console.log("removed listeners");
+const styleImage = (img, event, counter) => {
+  const className = `k-image-${counter}`;
+
+  console.log(img, event);
+
+  if (imageContainers.includes(className)) return;
+
+  imageContainers.push(className);
+  const container = document.createElement("div");
+  container.classList.add(className);
+  container.style.cssText = `position:absolute; width: ${img.width}px; height: ${img.height}px;
+                            z-index: 10000; top: ${event.clientY}px; left: ${event.clientX}px;
+                            transform: translate(-50%, -50%); background: red;`;
+  document.body.appendChild(container);
 };
 
 const addStylesToBody = () => {
