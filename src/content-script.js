@@ -1,15 +1,38 @@
-console.log("in content-script.js");
+/**
+ * launches everywhere as soon as browser is opened
+ * lives in html page & dom itself
+ */
 
-// chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
-//   console.log(request.msg);
+console.log("Content script working");
 
-//   if (request.msg == "getFonts") {
-//     // Initialize usage, incase the message is sent multiple times
-//     fontUsage = {};
+//on init perform based on chrome stroage value
+window.onload = function () {
+  chrome.storage.sync.get("hide", function (data) {
+    data.hide ? addListeners() : removeListeners();
+  });
+};
 
-//     getFonts($("body"));
+// chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+//   if (request === "onExtensionClicked") {
+//     let images = document.querySelectorAll("img");
 
-//     // send parse results back to popup
-//     sendResponse({ fontUsage: fontUsage, fontSizeUsage: fontSizeUsage });
+//     for (img of images) {
+//       console.log(img);
+//     }
 //   }
 // });
+
+//message listener for background
+chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
+  request.command === "init" ? addListeners() : removeListeners();
+
+  sendResponse({ result: "success" });
+});
+
+const addListeners = () => {
+  console.log("added listeners");
+};
+
+const removeListeners = () => {
+  console.log("removed listeners");
+};

@@ -12,5 +12,8 @@
       "js": ["content-script.js", "runtime.js"]
     }
   ],
-  "permissions": ["*://*/*"]
+  "background": {
+    "scripts": ["background.js", "runtime.js"]
+  },
+  "permissions": ["*://*/*", "tabs", "storage", "activeTab"]
 }
