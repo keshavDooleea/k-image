@@ -41,9 +41,17 @@ const addPreview = () => {
   const actionContainer = document.createElement("div");
   actionContainer.classList.add(ACTION_CONTAINER);
   actionContainer.style.display = "none";
-  const button = document.createElement("button");
-  button.innerText = "Download All";
-  actionContainer.appendChild(button);
+
+  const clearButton = document.createElement("button");
+  clearButton.innerText = "Clear";
+  clearButton.addEventListener("click", clearImages);
+
+  const downloadButton = document.createElement("button");
+  downloadButton.innerText = "Download All";
+  downloadButton.addEventListener("click", downloadImages);
+
+  actionContainer.appendChild(clearButton);
+  actionContainer.appendChild(downloadButton);
 
   container.appendChild(header);
   container.appendChild(mainContainer);
@@ -52,13 +60,17 @@ const addPreview = () => {
 };
 
 const addListeners = () => {
+  addHeadResources();
   addCssStylesToHead();
+
   const allImages = document.querySelectorAll("body img");
   const body = document.querySelector("body");
 
   // prevent click listeners on all dom elements except images
   body.addEventListener("click", (event) => {
-    if (event.target.tagName.toLowerCase() !== "img") return;
+    if (event.target.tagName.toLowerCase() !== "img") {
+      return;
+    }
   });
 
   // add specific listener on each image
@@ -81,20 +93,63 @@ const appendToPreview = (event) => {
   const item = document.createElement("div");
   item.classList.add(MAIN_CONTAINER_ITEM);
 
+  const imageContainer = document.createElement("div");
+  imageContainer.classList.add("img-container");
   const image = document.createElement("img");
   image.src = event.target.src;
+  imageContainer.appendChild(image);
 
   const cross = document.createElement("div");
   cross.classList.add("cross");
+  const crossIcon = document.createElement("i");
+  crossIcon.classList.add("fas");
+  crossIcon.classList.add("fa-times-circle");
   cross.addEventListener("click", (crossEvent) => {
-    deleteItem(crossEvent.target.parentElement);
+    deleteItem(crossEvent.target.parentElement.parentElement);
   });
+  cross.appendChild(crossIcon);
 
-  item.appendChild(image);
-  item.appendChild(cross);
+  const download = document.createElement("div");
+  download.classList.add("download");
+  const downloadIcon = document.createElement("i");
+  downloadIcon.classList.add("fas");
+  downloadIcon.classList.add("fa-arrow-alt-circle-down");
+  download.addEventListener("click", () => downloadOneImage(image));
+  download.appendChild(downloadIcon);
+
+  const iconContainer = document.createElement("div");
+  iconContainer.classList.add("icon-container");
+  iconContainer.appendChild(download);
+  iconContainer.appendChild(cross);
+
+  item.appendChild(imageContainer);
+  item.appendChild(iconContainer);
 
   main.appendChild(item);
   updateTitle();
+};
+
+const clearImages = () => {
+  const items = document.querySelectorAll(`.${MAIN_CONTAINER_ITEM}`);
+
+  items.forEach((item) => {
+    deleteItem(item);
+  });
+};
+
+const downloadImages = (event) => {
+  const images = document.querySelectorAll(`.${MAIN_CONTAINER_ITEM} img`);
+
+  images.forEach((img) => {
+    downloadOneImage(img);
+  });
+};
+
+const downloadOneImage = (img) => {
+  const anchorTag = document.createElement("a");
+  anchorTag.href = img.src;
+  anchorTag.download = `k-image-${img.src}`;
+  anchorTag.click();
 };
 
 const containsDuplicate = (currentSource) => {
@@ -112,7 +167,7 @@ const updateTitle = () => {
   const items = document.querySelectorAll(`.${MAIN_CONTAINER_ITEM}`);
   title.innerText = `Selected Images (${items.length})`;
 
-  actionContainer.style.display = items.length === 0 ? "none" : "grid";
+  actionContainer.style.display = items.length === 0 ? "none" : "flex";
 };
 
 const deleteItem = (element) => {
@@ -122,100 +177,132 @@ const deleteItem = (element) => {
 };
 
 // css for preview container on top as well as dom elements
+const addHeadResources = () => {
+  const fontAwesomeScript = document.createElement("script");
+
+  fontAwesomeScript.type = "text/javascript";
+  fontAwesomeScript.src = `https://kit.fontawesome.com/7d19f117b4.js`;
+  fontAwesomeScript.crossOrigin = "anonymous";
+  document.head.appendChild(fontAwesomeScript);
+};
+
 const addCssStylesToHead = () => {
+  const mainBackground = "#232730cf";
+  const itemsColor = "#ffffff0f";
+  const textColor = "#767779"; // grey
+
   document.head.insertAdjacentHTML(
     "beforeend",
     `<style>
-        body:not(img), *:not(img) { cursor: not-allowed !important; }
-        img { cursor: pointer; }
-        img:hover { filter: brightness(125%); }
-        .${PREVIEW} * {
-            box-sizing: border-box; 
-            cursor: initial !important;
-        }
-        .${PREVIEW} { 
-            position: absolute;
-            top: 10px;
-            right: 10px;
-            width: 22%;
-            background-color: #f2f3f7;
-            z-index: 100000;
-            display: flex;
-            flex-direction: column;
-            border-radius: 8px;
-            padding: 5px 8px 8px 8px;
-            overflow-y: auto;
-            box-shadow: 0 0 20px rgba(0,0,0,0.1);
-        }
-         .${HEADER} {
-             width: 100%;
-             height: 40px;
-             display: grid;
-             place-content: center;
-         }
-         .${MAIN_CONTAINER} {
-             width: 100%;
-             display: flex;
-             flex-direction: column;
-         }
-         .${ACTION_CONTAINER} {
-             width: 100%;
-             display: grid;
-             place-content: center;
-         }
-         .${ACTION_CONTAINER} button {
-             padding: 5px 10px;
-             border: none;
-             outline: none;
-             border-radius: 5px;
-             margin-top: 10px;
-             cursor: pointer !important;
-             box-shadow: -6px -6px 8px rgba(255, 255, 255, 0.9), 5px 5px 8px rgba(0, 0, 0, 0.07);
-         }
-         .${MAIN_CONTAINER_ITEM} {
-             width: 100%;
-             height: 75px;
-             display: grid;
-             grid-template-columns: 75% 25%;
-             grid-template-rows: 100%;
-             grid-gap-column: 10px;
-             background: #f2f3f7;
-             border-radius: 5px;
-             padding: 5px 8px;
-             box-shadow: -6px -6px 8px rgba(255, 255, 255, 0.9), 5px 5px 8px rgba(0, 0, 0, 0.07);
-         }
-         .${MAIN_CONTAINER_ITEM}:not(:nth-child(1)) {
-             margin-top: 10px;
-         }
-         .${MAIN_CONTAINER_ITEM} img {
-             max-width: 100%;
-             max-height: 100%;
-             justify-self: center;
-             cursor: initial !important;
-         }
-         .${MAIN_CONTAINER_ITEM} img:hover {
-            filter: brightness(100%);
-         }
-         .cross {
-            display: grid;
-            place-content: center;
-            position: relative;
-         }
-         .cross::before {
-             content: "X";
-             width: 28px;
-             height: 28px;
-             position: absolute;
-             top: 50%;
-             left: 50%;
-             transform: translate(-50%, -50%);
-             background-color: #f2f3f7;
-             border-radius: 50%;
-             box-shadow: -6px -6px 8px rgba(255, 255, 255, 0.9), 5px 5px 8px rgba(0, 0, 0, 0.07);
-             display: grid;
-             place-content: center;
-             cursor: pointer;
-         }
-    </style>`
+            body:not(img), *:not(img) { cursor: not-allowed !important; }
+            img { cursor: pointer; }
+            img:hover { filter: brightness(125%); }
+
+            .${PREVIEW} * {
+                box-sizing: border-box; 
+                cursor: initial !important;
+            }
+            .${PREVIEW} { 
+                position: fixed;
+                top: 10px;
+                right: 10px;
+                width: 300px;
+                max-height: 90vh;
+                background-color: ${mainBackground};
+                backdrop-filter: blur(10px);
+                z-index: 100000;
+                display: flex;
+                flex-direction: column;
+                border-radius: 8px;
+                padding: 5px 8px 8px 8px;
+                overflow-y: auto;
+                box-shadow: 0 0 20px rgba(0,0,0,0.1);
+            }
+            .${PREVIEW}::-webkit-scrollbar {
+                width: 0;
+            }
+             .${HEADER} {
+                 width: 100%;
+                 height: 40px;
+                 display: grid;
+                 place-content: center;
+                 color: ${textColor};
+             }
+             .${MAIN_CONTAINER} {
+                 width: 100%;
+                 display: flex;
+                 flex-direction: column;
+             }
+             .${ACTION_CONTAINER} {
+                 width: 100%;
+                 display: flex;
+                 align-items: center;
+                 justify-content: space-evenly;
+                 margin-top: 10px;
+             }
+             .${ACTION_CONTAINER} button {
+                 padding: 8px 10px;
+                 border: none;
+                 outline: none;
+                 border-radius: 5px;
+                 cursor: pointer !important;
+                 color: ${textColor};
+                 background-color: ${mainBackground};
+                 font-weight: bold;
+                }
+             .${ACTION_CONTAINER} button:nth-child(1) {
+             }
+             .${MAIN_CONTAINER_ITEM} {
+                 width: 100%;
+                 height: 75px;
+                 display: flex;
+                 background-color: ${itemsColor};
+                 border-radius: 5px;
+                 padding: 5px 8px;
+             }
+             .${MAIN_CONTAINER_ITEM}:not(:nth-child(1)) {
+                 margin-top: 10px;
+             }
+             .img-container {
+                 width: 60%;
+                 height: 100%;
+                 display: flex;
+                 align-items: center;
+                 justify-content: center;
+             }
+             .img-container img {
+                 max-width: 100%;
+                 max-height: 100%;
+                 justify-self: center;
+                 cursor: initial !important;
+             }
+             .img-container img:hover {
+                filter: brightness(100%);
+             }
+             .icon-container {
+                 width: 40%;
+                 height: 100%;
+                 display: flex;
+                 align-items: center;
+                 justify-content: space-evenly;
+             }
+             .cross, .download {
+                position: relative;
+                display: grid;
+                place-content: center;
+                width: 35px;
+                height: 35px;
+                background-color: ${mainBackground};
+                align-self: center;
+                border-radius: 5px;
+                cursor: pointer !important;
+             }
+             .cross i, .download i {
+                font-size: 22px;
+                cursor: pointer !important;
+                pointer-events: none;
+                color: ${textColor};
+             }
+        </style>`
   );
 };
