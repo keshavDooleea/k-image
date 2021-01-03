@@ -4,7 +4,7 @@
   "description": "Select and download images",
   "manifest_version": 2,
   "browser_action": {
-    "default_popup": "index.html"
+    "default_title": "k-image"
   },
   "content_scripts": [
     {

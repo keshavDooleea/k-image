@@ -10,18 +10,50 @@ const HEADER = "k-image-header";
 const MAIN_CONTAINER = "k-image-main";
 const MAIN_CONTAINER_ITEM = "k-image-main-item";
 const ACTION_CONTAINER = "k-image-actions";
+const KIMAGE_BODY = "k-image-body";
 
 // message listener for background.js
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
-  if (request.command === "onPopUpInit") {
-    addPreview();
+  if (request === "onExtensionClicked") {
+    toggleMainContainer();
+
+    // check if main is already in dom
+    const previewContainer = document.querySelector(`.${PREVIEW}`);
+    if (document.body.contains(previewContainer)) {
+      return;
+    }
+
+    addHeadResources();
+    addCssStylesToHead();
+    addMainPreview();
     addListeners();
   }
 
   sendResponse({ result: "success" });
 });
 
-const addPreview = () => {
+const toggleMainContainer = () => {
+  const previewContainer = document.querySelector(`.${PREVIEW}`);
+  if (!previewContainer) {
+    return;
+  }
+
+  previewContainer.style.display === "none"
+    ? reAddMain(previewContainer)
+    : removeMain(previewContainer);
+};
+
+const reAddMain = (previewContainer) => {
+  previewContainer.style.display = "flex";
+  addListeners();
+};
+
+const removeMain = (previewContainer) => {
+  previewContainer.style.display = "none";
+  document.body.classList.remove(KIMAGE_BODY);
+};
+
+const addMainPreview = () => {
   // main container
   const container = document.createElement("div");
   container.classList.add(PREVIEW);
@@ -60,11 +92,10 @@ const addPreview = () => {
 };
 
 const addListeners = () => {
-  addHeadResources();
-  addCssStylesToHead();
-
   const allImages = document.querySelectorAll("body img");
   const body = document.querySelector("body");
+
+  body.classList.add(KIMAGE_BODY);
 
   // prevent click listeners on all dom elements except images
   body.addEventListener("click", (event) => {
@@ -178,25 +209,31 @@ const deleteItem = (element) => {
 
 // css for preview container on top as well as dom elements
 const addHeadResources = () => {
+  // font awesome
   const fontAwesomeScript = document.createElement("script");
-
   fontAwesomeScript.type = "text/javascript";
   fontAwesomeScript.src = `https://kit.fontawesome.com/7d19f117b4.js`;
   fontAwesomeScript.crossOrigin = "anonymous";
+
+  // custom font
+
   document.head.appendChild(fontAwesomeScript);
 };
 
 const addCssStylesToHead = () => {
   const mainBackground = "#232730cf";
   const itemsColor = "#ffffff0f";
-  const textColor = "#767779"; // grey
+  const textColor = "#b6bac2"; // grey
+  const font = `font-family: 'Yanone Kaffeesatz', sans-serif;`;
 
   document.head.insertAdjacentHTML(
     "beforeend",
     `<style>
-            body:not(img), *:not(img) { cursor: not-allowed !important; }
-            img { cursor: pointer; }
-            img:hover { filter: brightness(125%); }
+            @import url('https://fonts.googleapis.com/css2?family=Yanone+Kaffeesatz:wght@600&display=swap');
+
+            .${KIMAGE_BODY}:not(img), .${KIMAGE_BODY} *:not(img) { cursor: not-allowed; }
+            .${KIMAGE_BODY} img { cursor: pointer; }
+            .${KIMAGE_BODY} img:hover { filter: brightness(125%); }
 
             .${PREVIEW} * {
                 box-sizing: border-box; 
@@ -217,6 +254,7 @@ const addCssStylesToHead = () => {
                 padding: 5px 8px 8px 8px;
                 overflow-y: auto;
                 box-shadow: 0 0 20px rgba(0,0,0,0.1);
+                cursor: initial !important;
             }
             .${PREVIEW}::-webkit-scrollbar {
                 width: 0;
@@ -226,7 +264,9 @@ const addCssStylesToHead = () => {
                  height: 40px;
                  display: grid;
                  place-content: center;
+                 letter-spacing: 0.5px;
                  color: ${textColor};
+                 ${font}
              }
              .${MAIN_CONTAINER} {
                  width: 100%;
@@ -244,11 +284,14 @@ const addCssStylesToHead = () => {
                  padding: 8px 10px;
                  border: none;
                  outline: none;
+                 font-size: 15px;
                  border-radius: 5px;
+                 letter-spacing: 0.5px;
                  cursor: pointer !important;
                  color: ${textColor};
                  background-color: ${mainBackground};
                  font-weight: bold;
+                 ${font}
                 }
              .${ACTION_CONTAINER} button:nth-child(1) {
              }
@@ -284,7 +327,7 @@ const addCssStylesToHead = () => {
                  height: 100%;
                  display: flex;
                  align-items: center;
-                 justify-content: space-evenly;
+                 justify-content: space-around;
              }
              .cross, .download {
                 position: relative;
