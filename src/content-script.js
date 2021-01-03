@@ -9,6 +9,7 @@ const PREVIEW = "k-image-preview";
 const HEADER = "k-image-header";
 const MAIN_CONTAINER = "k-image-main";
 const MAIN_CONTAINER_ITEM = "k-image-main-item";
+const ACTION_CONTAINER = "k-image-actions";
 
 // message listener for background.js
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
@@ -37,8 +38,16 @@ const addPreview = () => {
   const mainContainer = document.createElement("div");
   mainContainer.classList.add(MAIN_CONTAINER);
 
+  const actionContainer = document.createElement("div");
+  actionContainer.classList.add(ACTION_CONTAINER);
+  actionContainer.style.display = "none";
+  const button = document.createElement("button");
+  button.innerText = "Download All";
+  actionContainer.appendChild(button);
+
   container.appendChild(header);
   container.appendChild(mainContainer);
+  container.appendChild(actionContainer);
   document.body.appendChild(container);
 };
 
@@ -98,9 +107,12 @@ const containsDuplicate = (currentSource) => {
 };
 
 const updateTitle = () => {
+  const actionContainer = document.querySelector(`.${ACTION_CONTAINER}`);
   const title = document.querySelector(`.${HEADER} h3`);
   const items = document.querySelectorAll(`.${MAIN_CONTAINER_ITEM}`);
   title.innerText = `Selected Images (${items.length})`;
+
+  actionContainer.style.display = items.length === 0 ? "none" : "grid";
 };
 
 const deleteItem = (element) => {
@@ -131,7 +143,7 @@ const addCssStylesToHead = () => {
             display: flex;
             flex-direction: column;
             border-radius: 8px;
-            padding: 5px 8px;
+            padding: 5px 8px 8px 8px;
             overflow-y: auto;
             box-shadow: 0 0 20px rgba(0,0,0,0.1);
         }
@@ -145,6 +157,20 @@ const addCssStylesToHead = () => {
              width: 100%;
              display: flex;
              flex-direction: column;
+         }
+         .${ACTION_CONTAINER} {
+             width: 100%;
+             display: grid;
+             place-content: center;
+         }
+         .${ACTION_CONTAINER} button {
+             padding: 5px 10px;
+             border: none;
+             outline: none;
+             border-radius: 5px;
+             margin-top: 10px;
+             cursor: pointer !important;
+             box-shadow: -6px -6px 8px rgba(255, 255, 255, 0.9), 5px 5px 8px rgba(0, 0, 0, 0.07);
          }
          .${MAIN_CONTAINER_ITEM} {
              width: 100%;
