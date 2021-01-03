@@ -10,25 +10,8 @@ const HEADER = "k-image-header";
 const MAIN_CONTAINER = "k-image-main";
 const MAIN_CONTAINER_ITEM = "k-image-main-item";
 
-//on init perform based on chrome stroage value
-window.onload = function () {
-  //   chrome.storage.sync.get("counter", (data) => {
-  //     // data.counter > 0 ? addListeners() : removeListeners();
-  //   });
-};
-
-// chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
-//   if (request === "onExtensionClicked") {
-//     console.log("Clicked");
-//     addListeners();
-//   }
-// });
-
 // message listener for background.js
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
-  if (request === "onExtensionClicked") {
-  }
-
   if (request.command === "onPopUpInit") {
     addPreview();
     addListeners();
@@ -36,54 +19,6 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 
   sendResponse({ result: "success" });
 });
-
-const addListeners = () => {
-  console.log("addListeners");
-
-  addCssStylesToHead();
-  let currentCounter;
-  const allImages = document.querySelectorAll("body img");
-  const body = document.querySelector("body");
-
-  chrome.storage.sync.get("counter", (data) => (currentCounter = data.counter));
-
-  // prevent click listeners on all dom elements except images
-  body.addEventListener("click", (event) => {
-    if (event.target.tagName.toLowerCase() !== "img") return;
-  });
-
-  // add specific listener on each image
-  allImages.forEach((img) => {
-    img.addEventListener("click", (event) => {
-      const isSuccess = styleImage(event, currentCounter);
-
-      if (isSuccess) {
-        chrome.storage.sync.set({ counter: currentCounter++ }, () => {});
-      }
-    });
-  });
-};
-
-const styleImage = (event, counter) => {
-  const className = `k-image-${counter}`;
-  const duplicateImg = (imageItem) => imageItem.src === event.target.src;
-
-  // prevent adding duplicate
-  if (imageContainers.length > 0 && imageContainers.some(duplicateImg)) {
-    return false;
-  }
-
-  // push new item
-  imageContainers.push({
-    className,
-    src: event.target.src,
-    counter,
-  });
-
-  appendToPreview(imageContainers[imageContainers.length - 1]);
-
-  return true;
-};
 
 const addPreview = () => {
   // main container
@@ -95,7 +30,7 @@ const addPreview = () => {
   header.classList.add(HEADER);
 
   const title = document.createElement("h3");
-  title.innerText = `Selected Images (${imageContainers.length})`;
+  title.innerText = `Selected Images (0)`;
   header.appendChild(title);
 
   // where each item will be inserted
@@ -107,12 +42,29 @@ const addPreview = () => {
   document.body.appendChild(container);
 };
 
-const appendToPreview = (imgArray) => {
-  console.log(imgArray);
+const addListeners = () => {
+  addCssStylesToHead();
+  const allImages = document.querySelectorAll("body img");
+  const body = document.querySelector("body");
 
-  // update title
-  const title = document.querySelector(`.${HEADER} h3`);
-  title.innerText = `Selected Images (${imageContainers.length})`;
+  // prevent click listeners on all dom elements except images
+  body.addEventListener("click", (event) => {
+    if (event.target.tagName.toLowerCase() !== "img") return;
+  });
+
+  // add specific listener on each image
+  allImages.forEach((img) => {
+    img.addEventListener("click", (event) => {
+      appendToPreview(event);
+    });
+  });
+};
+
+const appendToPreview = (event) => {
+  // prevent adding duplicate
+  if (containsDuplicate(event.target.src)) {
+    return;
+  }
 
   const main = document.querySelector(`.${MAIN_CONTAINER}`);
 
@@ -121,14 +73,40 @@ const appendToPreview = (imgArray) => {
   item.classList.add(MAIN_CONTAINER_ITEM);
 
   const image = document.createElement("img");
-  image.src = imgArray.src;
+  image.src = event.target.src;
 
   const cross = document.createElement("div");
   cross.classList.add("cross");
+  cross.addEventListener("click", (crossEvent) => {
+    deleteItem(crossEvent.target.parentElement);
+  });
 
   item.appendChild(image);
   item.appendChild(cross);
+
   main.appendChild(item);
+  updateTitle();
+};
+
+const containsDuplicate = (currentSource) => {
+  const duplicateImg = (imageElement) => imageElement.src === currentSource;
+  const items = Array.from(
+    document.querySelectorAll(`.${MAIN_CONTAINER_ITEM} img`)
+  );
+
+  return items.some(duplicateImg);
+};
+
+const updateTitle = () => {
+  const title = document.querySelector(`.${HEADER} h3`);
+  const items = document.querySelectorAll(`.${MAIN_CONTAINER_ITEM}`);
+  title.innerText = `Selected Images (${items.length})`;
+};
+
+const deleteItem = (element) => {
+  const main = document.querySelector(`.${MAIN_CONTAINER}`);
+  main.removeChild(element);
+  updateTitle();
 };
 
 // css for preview container on top as well as dom elements
@@ -155,7 +133,8 @@ const addCssStylesToHead = () => {
             border-radius: 8px;
             padding: 5px 8px;
             overflow-y: auto;
-         }
+            box-shadow: 0 0 20px rgba(0,0,0,0.1);
+        }
          .${HEADER} {
              width: 100%;
              height: 40px;
